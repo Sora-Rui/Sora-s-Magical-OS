@@ -24,17 +24,65 @@ local function promptShipName(state, nativeTerm)
     end
 end
 
+local function promptSymbol(state, nativeTerm)
+    term.redirect(nativeTerm)
+    term.setBackgroundColor(colors.black)
+    term.setTextColor(colors.white)
+    term.clear()
+    term.setCursorPos(1, 1)
+    print("Sora's Magical OS")
+    print("Eigenes Symbol zeichnen")
+    print("7 Zeilen, leer = alte Zeile behalten")
+
+    local lines = {}
+    for index = 1, 7 do
+        write(index .. "> ")
+        local value = read()
+        if value == "" then
+            lines[index] = state.customSymbol[index] or ""
+        else
+            lines[index] = value
+        end
+    end
+
+    runtime.setCustomSymbol(state, lines)
+end
+
 local function handleAction(state, action, nativeTerm)
-    if action == "toggle_alarm" then
+    if not action then
+        return
+    elseif action == "toggle_alarm" then
         runtime.toggleManualAlarm(state)
     elseif action == "rename_ship" then
         promptShipName(state, nativeTerm)
+    elseif action == "edit_symbol" then
+        promptSymbol(state, nativeTerm)
+    elseif action == "cycle_palette" then
+        runtime.cyclePalette(state)
     elseif action == "map_helm" then
         runtime.cycleAssignment(state, "helmSignalSide")
     elseif action == "map_fuel" then
         runtime.cycleAssignment(state, "fuelSensorSide")
     elseif action == "map_alarm" then
         runtime.cycleAssignment(state, "alarmOutputSide")
+    elseif action == "map_thrust" then
+        runtime.cycleAssignment(state, "thrustOutputSide")
+    elseif action == "map_port" then
+        runtime.cycleAssignment(state, "portOutputSide")
+    elseif action == "map_starboard" then
+        runtime.cycleAssignment(state, "starboardOutputSide")
+    elseif action == "map_factory_output" then
+        runtime.cycleAssignment(state, "factoryOutputSide")
+    elseif action == "toggle_thrust" then
+        runtime.toggleThrust(state)
+    elseif action == "turn_port" then
+        runtime.turnPort(state)
+    elseif action == "turn_starboard" then
+        runtime.turnStarboard(state)
+    elseif action == "turn_stop" then
+        runtime.stopTurn(state)
+    elseif action == "toggle_factory" then
+        runtime.toggleFactory(state)
     elseif action == "home" or action == "helm" or action == "factory" or action == "alarms" or action == "settings" then
         runtime.setScreen(state, action)
     end
@@ -107,6 +155,8 @@ local function main()
             end
         elseif event == "monitor_touch" then
             handleAction(state, runtime.resolveTouch(state, p1, p2, p3), nativeTerm)
+        elseif event == "mouse_click" then
+            handleAction(state, runtime.resolveTouch(state, nil, p2, p3), nativeTerm)
         end
     end
 end

@@ -2,6 +2,51 @@ local runtime = {}
 
 local CONFIG_PATH = "/smos/config.txt"
 local ASSIGNABLE_SIDES = { "none", "top", "bottom", "left", "right", "front", "back" }
+local PALETTES = {
+    crimson = {
+        accent = colors.red,
+        accentLight = colors.orange,
+        text = colors.white,
+        muted = colors.lightGray,
+        shadow = colors.black,
+        warning = colors.yellow,
+        ok = colors.lime,
+        panel = colors.gray,
+        panelDark = colors.brown,
+    },
+    ocean = {
+        accent = colors.blue,
+        accentLight = colors.lightBlue,
+        text = colors.white,
+        muted = colors.lightGray,
+        shadow = colors.black,
+        warning = colors.red,
+        ok = colors.lime,
+        panel = colors.gray,
+        panelDark = colors.cyan,
+    },
+    royal = {
+        accent = colors.purple,
+        accentLight = colors.magenta,
+        text = colors.white,
+        muted = colors.lightGray,
+        shadow = colors.black,
+        warning = colors.red,
+        ok = colors.lime,
+        panel = colors.gray,
+        panelDark = colors.lightBlue,
+    },
+}
+local PALETTE_ORDER = { "crimson", "ocean", "royal" }
+local DEFAULT_SYMBOL = {
+    "   .-'''-.",
+    "  /  .-.  \\",
+    " |  /   \\  |",
+    " | |  X  | |",
+    " | | --- | |",
+    "  \\ '---' //",
+    "   '.___.'",
+}
 
 local screenOrder = {
     "home",
@@ -49,6 +94,8 @@ local function saveConfig(state)
         shipName = state.shipName,
         assignments = state.assignments,
         preferMonitor = state.preferMonitor,
+        palette = state.palette,
+        customSymbol = state.customSymbol,
     }))
     handle.close()
     return true
@@ -74,9 +121,11 @@ function runtime.newState(theme)
     local config = loadConfig()
     local monitor, monitorName = findMonitor()
 
-    return {
+    local state = {
         theme = theme,
         shipName = config.shipName or theme.shipName,
+        palette = config.palette or "crimson",
+        customSymbol = config.customSymbol or DEFAULT_SYMBOL,
         screenOrder = screenOrder,
         activeScreen = "home",
         selectedIndex = 1,
@@ -93,6 +142,16 @@ function runtime.newState(theme)
             helmSignalSide = "back",
             fuelSensorSide = "left",
             alarmOutputSide = "right",
+            thrustOutputSide = "top",
+            portOutputSide = "front",
+            starboardOutputSide = "bottom",
+            factoryOutputSide = "none",
+        },
+        outputs = {
+            thrust = false,
+            turnLeft = false,
+            turnRight = false,
+            factoryEnabled = false,
         },
         helm = {
             thrust = "Leerlauf",
@@ -107,6 +166,9 @@ function runtime.newState(theme)
             mode = "Nur vorhandene Mods",
         },
     }
+
+    runtime.applyTheme(state)
+    return state
 end
 
 function runtime.refreshPeripherals(state)
@@ -123,6 +185,43 @@ function runtime.setShipName(state, shipName)
         state.shipName = shipName
         saveConfig(state)
     end
+end
+
+function runtime.setCustomSymbol(state, symbolLines)
+    if type(symbolLines) == "table" and #symbolLines > 0 then
+        state.customSymbol = symbolLines
+        saveConfig(state)
+    end
+end
+
+function runtime.paletteName(state)
+    return state.palette or "crimson"
+end
+
+function runtime.applyTheme(state)
+    local preset = PALETTES[state.palette] or PALETTES.crimson
+    for key, value in pairs(preset) do
+        state.theme[key] = value
+    end
+end
+
+function runtime.cyclePalette(state)
+    local nextIndex = 1
+    for index, name in ipairs(PALETTE_ORDER) do
+        if name == state.palette then
+            nextIndex = index + 1
+            break
+        end
+    end
+
+    if nextIndex > #PALETTE_ORDER then
+        nextIndex = 1
+    end
+
+    state.palette = PALETTE_ORDER[nextIndex]
+    runtime.applyTheme(state)
+    saveConfig(state)
+    return state.palette
 end
 
 function runtime.cycleAssignment(state, assignmentKey)
@@ -192,6 +291,37 @@ function runtime.toggleManualAlarm(state)
     return state.manualAlarm
 end
 
+function runtime.toggleThrust(state)
+    state.outputs.thrust = not state.outputs.thrust
+    state.helm.thrust = state.outputs.thrust and "Aktiv" or "Leerlauf"
+    return state.outputs.thrust
+end
+
+function runtime.turnPort(state)
+    state.outputs.turnLeft = true
+    state.outputs.turnRight = false
+    state.helm.heading = "Backbord"
+end
+
+function runtime.turnStarboard(state)
+    state.outputs.turnLeft = false
+    state.outputs.turnRight = true
+    state.helm.heading = "Steuerbord"
+end
+
+function runtime.stopTurn(state)
+    state.outputs.turnLeft = false
+    state.outputs.turnRight = false
+    state.helm.heading = "Still"
+end
+
+function runtime.toggleFactory(state)
+    state.outputs.factoryEnabled = not state.outputs.factoryEnabled
+    state.factory.lineA = state.outputs.factoryEnabled and "Aktiv" or "Bereit"
+    state.factory.mode = state.outputs.factoryEnabled and "Produktion" or "Standby"
+    return state.outputs.factoryEnabled
+end
+
 function runtime.alarmStatus(state)
     if state.manualAlarm then
         return "Manuell aktiv", state.theme.warning
@@ -229,6 +359,14 @@ function runtime.isAlarmVisible(state)
     return state.manualAlarm and state.alarmFlash
 end
 
+function runtime.describeSymbol(state)
+    if not state.customSymbol or #state.customSymbol == 0 then
+        return "Standard"
+    end
+
+    return tostring(#state.customSymbol) .. " Zeilen"
+end
+
 function runtime.prepareDisplay(state, nativeTerm)
     if state.preferMonitor and state.monitor then
         state.monitor.setTextScale(0.5)
@@ -249,7 +387,7 @@ function runtime.registerTouchTarget(state, target)
 end
 
 function runtime.resolveTouch(state, side, x, y)
-    if state.monitorName and side ~= state.monitorName then
+    if side and state.monitorName and side ~= state.monitorName then
         return nil
     end
 
@@ -280,14 +418,22 @@ local function readAssignmentInput(state)
     end
 end
 
+local function setOutput(side, enabled)
+    if side and side ~= "none" then
+        redstone.setOutput(side, enabled)
+    end
+end
+
 function runtime.tick(state)
     runtime.refreshPeripherals(state)
     readAssignmentInput(state)
 
     local alarmOutputSide = state.assignments.alarmOutputSide
-    if alarmOutputSide and alarmOutputSide ~= "none" then
-        redstone.setOutput(alarmOutputSide, state.manualAlarm and state.alarmFlash)
-    end
+    setOutput(state.assignments.thrustOutputSide, state.outputs.thrust)
+    setOutput(state.assignments.portOutputSide, state.outputs.turnLeft)
+    setOutput(state.assignments.starboardOutputSide, state.outputs.turnRight)
+    setOutput(state.assignments.factoryOutputSide, state.outputs.factoryEnabled)
+    setOutput(alarmOutputSide, state.manualAlarm and state.alarmFlash)
 
     if not state.manualAlarm or not state.speaker then
         state.alarmFlash = false

@@ -59,10 +59,13 @@ function ui.right(y, text, textColor, backgroundColor, padding)
     ui.writeAt(rightX(text, padding or 1), y, text, textColor, backgroundColor)
 end
 
-function ui.frame(title, footer)
+function ui.frame(title, footer, state)
     local width, height = term.getSize()
     ui.clear(theme.accent)
     ui.fillLine(1, theme.shadow)
+    if state and state.activeScreen ~= "home" then
+        ui.button(state, 2, 1, 6, "Home", "home")
+    end
     ui.center(1, " " .. title .. " ", theme.text, theme.shadow)
     ui.fillLine(height, theme.shadow)
     if footer then
@@ -106,8 +109,8 @@ function ui.button(state, x, y, width, label, action, active)
     end
 end
 
-function ui.skull(x, y)
-    local art = {
+function ui.drawSymbol(state, x, y)
+    local art = state.customSymbol or {
         "   .-^^-.",
         " .' x  x '.",
         "/    --    \\",
