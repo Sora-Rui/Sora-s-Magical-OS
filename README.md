@@ -10,7 +10,7 @@ Der Prototyp deckt jetzt alle geplanten Kernpunkte ab:
 - Navigation mit manuellen Wegpunkten
 - Maschinenraum- und Fabrikueberwachung
 - Schadens- und Alarmmatrix
-- Crew-Rollen fuer Pilot, Ingenieur und Alarmzentrale
+- Crew-Konten mit Benutzername/Passwort und Rollen fuer Pilot, Ingenieur, Alarmzentrale und Captain
 - Lokales Logbuch
 - PIN und physischer Schluesselschalter fuer kritische Funktionen
 - Funk- und Nachrichtenseite per Modem
@@ -56,6 +56,14 @@ Installierte Hauptdateien:
 - `/smos/app/ui.lua`
 - `/smos/app/screens.lua`
 
+## Wichtig vor der Nutzung
+
+- Brueckencomputer und Tablet muessen nach den letzten Auth- und Funkaenderungen beide auf denselben Stand gebracht werden.
+- Das erste Captain-Konto wird nur lokal auf der Bruecke eingerichtet, nicht vom Tablet aus.
+- Fuer einen Pocket Computer braucht die Bruecke mindestens ein Wireless Modem; Wired allein reicht nicht.
+- Das Funkprotokoll zeigt jetzt eingehende und ausgehende Eintraege mit Autor, PC-ID und Geraetetyp `T` oder `BC`.
+- Das Tablet fuehrt ein eigenes kompaktes Funkprotokoll fuer Syncs, Nachrichten und Remote-Aktionen.
+
 ## Ingame-Aufbau
 
 ### Brueckenrechner
@@ -75,6 +83,7 @@ Empfohlen:
 - `Pocket Computer` oder `Advanced Pocket Computer`
 - Wireless Modem aktiv
 - `tablet.lua` auf dem Pocket Computer vorhanden
+- zuerst nach einem Update neu starten, damit das neue Setup fuer Benutzername/Passwort und Funkprotokoll geladen wird
 
 ### Create- und Redstone-Ebene
 
@@ -133,7 +142,9 @@ Typische Ausfuehrungskomponenten:
 
 ### Crew
 
-- Rollenprofil `Pilot`, `Ingenieur`, `Alarmzentrale`
+- Rollenprofil `Pilot`, `Ingenieur`, `Alarmzentrale`, `Captain`
+- Crew-Konten mit Benutzername und Passwort
+- Captain-Verwaltung fuer Benutzeranlage und Rollenvergabe
 - PIN-Freigabe
 - Schluesselschalter-Zuordnung
 - gekoppeltes Tablet anzeigen
@@ -143,6 +154,8 @@ Typische Ausfuehrungskomponenten:
 - Funkstatus
 - letzte Kontakte
 - eingehende Kurznachrichten
+- ausgehende Kurznachrichten der Bruecke
+- Anzeige von Autor, PC-ID und Typ `T`/`BC`
 - Hinweis fuer Tablet-Betrieb
 
 ### Logbuch
@@ -254,8 +267,14 @@ Freigabewege:
 
 Es gibt jetzt zwei getrennte Sicherheitsstufen:
 
-- Rollencode fuer den Bereich und die Rolle
+- Crew-Konto mit Benutzername und Passwort
 - globale PIN fuer kritische Schiffsfunktionen
+
+Rollenlogik:
+
+- der Captain legt Crew-Konten an und vergibt Rollen
+- ein Crew-Konto kann mehrere Rollen besitzen
+- wenn noch kein Captain existiert, wird das erste erfolgreiche Captain-Login auf der Bruecke automatisch als Captain-Konto angelegt
 
 Bereichslogik:
 
@@ -263,25 +282,35 @@ Bereichslogik:
 - `Pilot` oeffnet `Helm` und `Navigation`
 - `Ingenieur` oeffnet `Maschinenraum/Fabrik` und `System`
 - `Alarmzentrale` oeffnet `Alarmzentrale`
+- `Captain` oeffnet alle Bereiche
 - `Funk` und `Logbuch` sind fuer eingeloggte Rollen sichtbar
 
-Standard-Rollencodes im Prototyp:
+Erstes Captain-Konto einrichten:
 
-- `Pilot` -> `1111`
-- `Ingenieur` -> `2222`
-- `Alarmzentrale` -> `3333`
+1. auf `Crew` gehen
+2. Rolle `Captain` waehlen
+3. `Login` druecken
+4. neuen Benutzernamen und Passwort eingeben
+5. wenn noch kein Captain existiert, wird dieses Konto automatisch zum ersten Captain
 
-Im Spiel solltest du diese Codes direkt auf der Crew-Seite aendern.
+Crew-Konten fuer andere Personen anlegen:
+
+1. als `Captain` einloggen
+2. auf `Crew` `User` druecken
+3. Benutzername und Passwort fuer das neue Konto setzen
+4. gewuenschte Rolle oben auswaehlen
+5. `Rolle` druecken, um diese Rolle dem Benutzer zu geben
 
 Login auf dem Hauptrechner:
 
 1. auf `Crew` gehen
 2. gewuenschte Rolle mit den Rollenbuttons auswaehlen
 3. `Login` druecken
-4. Operatornamen und Rollencode eingeben
+4. Benutzername und Passwort eingeben
 5. danach oeffnen sich die Bereiche dieser Rolle
 
-Fuer sensible Aktionen wie Schub, Reserve oder Autopilot reicht der Rollencode allein nicht.
+Der `Captain` hat Bereichszugriff auf das gesamte OS und kann alle Rollenaktionen ausfuehren.
+Fuer sensible Aktionen wie Schub, Reserve oder Autopilot reicht aber auch beim Captain das Crew-Login allein nicht.
 Dafuer braucht das System weiterhin die globale PIN oder den physischen Schluesselschalter.
 
 ## Funk und Tablet
@@ -296,23 +325,28 @@ Pocket-Verbindung Schritt fuer Schritt:
 
 1. am Brueckencomputer mindestens ein Wireless Modem anschliessen
 2. sicherstellen, dass `tablet.lua` auf dem Pocket Computer installiert ist
-3. auf dem Brueckencomputer den Schiffsnamen festlegen
-4. auf dem Pocket Computer `tablet` starten
-5. mit `S` denselben Schiffsnamen eintragen
-6. mit `P` die gewuenschte Rolle waehlen
-7. mit `U` den Rollencode dieser Rolle setzen
-8. mit `I` optional die globale PIN setzen, falls auch kritische Befehle erlaubt sein sollen
-9. mit `R` den Status abrufen
-10. sobald der Pocket Computer eine Statusantwort bekommt, ist die Verbindung aktiv
+3. das erste Captain-Konto einmal lokal auf der Bruecke einrichten, falls noch keines existiert
+4. auf dem Brueckencomputer den Schiffsnamen festlegen
+5. auf dem Pocket Computer `tablet` starten
+6. der erste Setup-Dialog fragt nach Schiffsname und ob das Tablet als `Captain` verbinden soll
+7. Benutzername und Passwort eines vorhandenen Crew-Kontos eintragen
+8. mit `P` bei Bedarf die Rolle wechseln oder mit `C` das Captain-Profil aktivieren
+9. mit `I` optional die globale PIN setzen, falls auch kritische Befehle erlaubt sein sollen
+10. mit `R` den Status abrufen
+11. sobald der Pocket Computer eine Statusantwort bekommt, ist die Verbindung aktiv
 
 ### Pocket Computer
 
 - `tablet.lua` auf dem Pocket Computer starten
 - Schiffsnamen eintragen
-- Rollencode der gewaehlten Rolle hinterlegen
+- Benutzername des Crew-Kontos hinterlegen
+- Passwort des Crew-Kontos hinterlegen
 - globale PIN hinterlegen, falls du kritische Befehle senden willst
+- vereinfachte Hauptansicht mit letzten Funkprotokollen verfuegbar
 - Rolle wechseln mit `P`
-- Rollencode setzen mit `U`
+- Captain-Profil umschalten mit `C`
+- Benutzer setzen mit `U`
+- Passwort setzen mit `W`
 - globale PIN setzen mit `I`
 - Status aktualisieren mit `R`
 
@@ -334,7 +368,10 @@ Wichtig:
 
 - Nur der Hauptrechner schaltet echte Ausgaenge.
 - Das Tablet sendet nur Befehle an den Hauptrechner.
-- Der Rollencode oeffnet erst die Rollenrechte.
+- Das Tablet nutzt dieselben Crew-Konten mit Benutzername und Passwort wie die Bruecke.
+- Die Rolle muss dem Benutzer vorher vom Captain zugewiesen worden sein.
+- Im Funkprotokoll steht `T` fuer Tablet/Pocket Computer und `BC` fuer Brueckencomputer.
+- Eigene Nachrichten werden jetzt ebenfalls im Funkprotokoll angezeigt und nicht nur eingehende Nachrichten.
 - Die globale PIN ist nur fuer kritische Befehle zusaetzlich noetig.
 
 ## Bedienung auf dem Hauptrechner
