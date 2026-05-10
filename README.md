@@ -10,7 +10,7 @@ Der Prototyp deckt jetzt alle geplanten Kernpunkte ab:
 - Navigation mit manuellen Wegpunkten
 - Maschinenraum- und Fabrikueberwachung
 - Schadens- und Alarmmatrix
-- Crew-Konten mit Benutzername/Passwort und Rollen fuer Pilot, Ingenieur, Alarmzentrale und Captain
+- Crew-Konten mit Benutzername/Passwort und Rollen fuer Pilot, Ingenieur, Alarmzentrale, Co-Captain und Captain
 - Lokales Logbuch
 - PIN und physischer Schluesselschalter fuer kritische Funktionen
 - Funk- und Nachrichtenseite per Modem
@@ -21,7 +21,41 @@ Der Prototyp deckt jetzt alle geplanten Kernpunkte ab:
 Empfohlene Wege:
 
 - Dev-Weg: Den Inhalt von `computercraft/` direkt auf einen Computer oder eine Disk kopieren.
+- `wget run https://raw.githubusercontent.com/Sora-Rui/Sora-s-Magical-OS/main/computercraft/install.lua https://raw.githubusercontent.com/Sora-Rui/Sora-s-Magical-OS/main/computercraft /`
+- reboot
+- (Falls bereits installiert:
+delete startup.lua
+delete smos)
 - Komfort-Weg im Spiel: Nur `install.lua` mit `wget` laden, der Installer zieht den Rest.
+
+### Schnellinstallation fuer dieses Repo
+
+- Bridge direkt installieren:
+- `wget run https://raw.githubusercontent.com/Sora-Rui/Sora-s-Magical-OS/main/computercraft/install.lua https://raw.githubusercontent.com/Sora-Rui/Sora-s-Magical-OS/main/computercraft / bridge`
+- danach `reboot`
+- Tablet direkt installieren:
+- `wget run https://raw.githubusercontent.com/Sora-Rui/Sora-s-Magical-OS/main/computercraft/install.lua https://raw.githubusercontent.com/Sora-Rui/Sora-s-Magical-OS/main/computercraft / tablet`
+- danach `tablet`
+
+### Wenn du noch die alte Version siehst
+
+- Dann ist fast immer noch ein alter lokaler Stand auf Bridge oder Tablet vorhanden, nicht die GitHub-Raw-Datei.
+- Ich habe den aktuellen Raw-Pfad geprueft: `main/computercraft/tablet.lua` enthaelt bereits die neue Version mit `protocolLog`, Benutzername/Passwort und der neuen Tablet-UI.
+- Bridge zwangsweise neu aufsetzen:
+- `delete startup.lua`
+- `delete smos`
+- `wget run https://raw.githubusercontent.com/Sora-Rui/Sora-s-Magical-OS/main/computercraft/install.lua https://raw.githubusercontent.com/Sora-Rui/Sora-s-Magical-OS/main/computercraft / bridge`
+- `reboot`
+- Tablet zwangsweise neu aufsetzen:
+- `delete tablet.lua`
+- `delete smos`
+- `wget run https://raw.githubusercontent.com/Sora-Rui/Sora-s-Magical-OS/main/computercraft/install.lua https://raw.githubusercontent.com/Sora-Rui/Sora-s-Magical-OS/main/computercraft / tablet`
+- `tablet`
+- Woran du die neue Version sofort erkennst:
+- auf dem Tablet steht `Funkprotokoll`
+- auf dem Tablet steht `Auth: U User W Pw`
+- im Bridge-Funkbereich tauchen `T` und `BC` im Protokoll auf
+- auf der Crew-Seite gibt es `User+`, `User-`, `Rolle+`, `Rolle-` und eine klickbare Crew-Auswahl
 
 Wichtig:
 
@@ -107,6 +141,7 @@ Typische Ausfuehrungskomponenten:
 - aktive Rolle
 - Startcheckliste
 - aktueller Wegpunkt
+- `mom. pos.` ueber `gps.locate()` falls ein GPS-Netz erreichbar ist
 - Flugmodus-Schalter
 
 ### Helm
@@ -140,14 +175,25 @@ Typische Ausfuehrungskomponenten:
 - manueller Alarm
 - Alarmmodus `Gefahr` und `Notfall`
 
+Wichtig fuer den manuellen Alarm:
+
+- er setzt den `Alarm I/O` jetzt dauerhaft auf aktiv, damit angeschlossene Sirenen und Lampen eindeutig einschalten
+- ohne zugeordneten `Alarm I/O` und ohne Speaker bleibt nur die Anzeige auf dem OS sichtbar
+
 ### Crew
 
-- Rollenprofil `Pilot`, `Ingenieur`, `Alarmzentrale`, `Captain`
+- Rollenprofil `Pilot`, `Ingenieur`, `Alarmzentrale`, `Co-Captain`, `Captain`
 - Crew-Konten mit Benutzername und Passwort
-- Captain-Verwaltung fuer Benutzeranlage und Rollenvergabe
+- klickbare Crew-Verwaltungsliste auf dem Monitor
+- Rollenentzug und Benutzerloeschung arbeiten mit der aktuell ausgewaehlten Crew-Person statt mit getipptem Benutzernamen
+- `User+` verwendet die aktuelle Auswahl als Standard, kann aber auch neue Konten anlegen
 - PIN-Freigabe
 - Schluesselschalter-Zuordnung
 - gekoppeltes Tablet anzeigen
+
+## Defaults
+
+- neuer Standardname fuer frische Installationen: `Mein Luftschift`
 
 ### Funk
 
@@ -263,6 +309,12 @@ Freigabewege:
 - `U` oder Button fuer PIN-Eingabe
 - physischer Schluesselschalter ueber `Schalter I/O`
 
+Anzeigehinweis:
+
+- die Monitor-Anzeige `Freigabe` meint nur diese zweite Ebene fuer kritische Funktionen
+- sie sperrt Captain oder Co-Captain nicht aus ihrem normalen Rollenbereich aus
+- waehrend Texteingaben zeigt der Monitor `Bitte Eingabe im Computer ausfuehren`; Abbruch geht ueber den Monitor-Button oder `Esc` am Computer
+
 ## Rollen-Login und Bereiche
 
 Es gibt jetzt zwei getrennte Sicherheitsstufen:
@@ -272,7 +324,10 @@ Es gibt jetzt zwei getrennte Sicherheitsstufen:
 
 Rollenlogik:
 
-- der Captain legt Crew-Konten an und vergibt Rollen
+- der erste Captain wird zum Gruender-Captain und bleibt die oberste Leitung
+- weitere leitende Offiziere sollten als `Co-Captain` gefuehrt werden
+- der Gruender-Captain kann `Co-Captain` vergeben oder entziehen
+- `Co-Captain` und `Captain` koennen normale Crew-Konten verwalten
 - ein Crew-Konto kann mehrere Rollen besitzen
 - wenn noch kein Captain existiert, wird das erste erfolgreiche Captain-Login auf der Bruecke automatisch als Captain-Konto angelegt
 
@@ -282,6 +337,7 @@ Bereichslogik:
 - `Pilot` oeffnet `Helm` und `Navigation`
 - `Ingenieur` oeffnet `Maschinenraum/Fabrik` und `System`
 - `Alarmzentrale` oeffnet `Alarmzentrale`
+- `Co-Captain` oeffnet alle Bereiche unterhalb des Gruender-Captains
 - `Captain` oeffnet alle Bereiche
 - `Funk` und `Logbuch` sind fuer eingeloggte Rollen sichtbar
 
@@ -296,10 +352,25 @@ Erstes Captain-Konto einrichten:
 Crew-Konten fuer andere Personen anlegen:
 
 1. als `Captain` einloggen
-2. auf `Crew` `User` druecken
+2. auf `Crew` `User+` druecken
 3. Benutzername und Passwort fuer das neue Konto setzen
 4. gewuenschte Rolle oben auswaehlen
-5. `Rolle` druecken, um diese Rolle dem Benutzer zu geben
+5. `Rolle+` druecken, um diese Rolle dem Benutzer zu geben
+
+Rollen oder Benutzer wieder entfernen:
+
+1. als Leitung auf `Crew` einloggen
+2. Benutzername des Zielkontos kennen
+3. gewuenschte Rolle oben auswaehlen
+4. `Rolle-` entzieht genau diese Rolle
+5. `User-` loescht das gesamte Crew-Konto
+
+Wichtig dabei:
+
+- der Gruender-Captain steht in der Crew-Liste immer ganz oben und ist mit `Gruender` markiert
+- der Gruender-Captain kann nicht geloescht oder als Captain entzogen werden
+- `Co-Captain` ist fuer weitere leitende Personen gedacht
+- der Gruender-Captain kann alte oder migrierte Captain-Rechte von anderen wieder entfernen
 
 Login auf dem Hauptrechner:
 
@@ -310,6 +381,7 @@ Login auf dem Hauptrechner:
 5. danach oeffnen sich die Bereiche dieser Rolle
 
 Der `Captain` hat Bereichszugriff auf das gesamte OS und kann alle Rollenaktionen ausfuehren.
+Der `Co-Captain` hat ebenfalls Vollzugriff auf den Schiffsbetrieb, bleibt aber unter dem Gruender-Captain.
 Fuer sensible Aktionen wie Schub, Reserve oder Autopilot reicht aber auch beim Captain das Crew-Login allein nicht.
 Dafuer braucht das System weiterhin die globale PIN oder den physischen Schluesselschalter.
 
@@ -330,7 +402,7 @@ Pocket-Verbindung Schritt fuer Schritt:
 5. auf dem Pocket Computer `tablet` starten
 6. der erste Setup-Dialog fragt nach Schiffsname und ob das Tablet als `Captain` verbinden soll
 7. Benutzername und Passwort eines vorhandenen Crew-Kontos eintragen
-8. mit `P` bei Bedarf die Rolle wechseln oder mit `C` das Captain-Profil aktivieren
+8. mit `P` bei Bedarf die Rolle wechseln, dabei ist jetzt auch `Co-Captain` enthalten; mit `C` wird direkt das Captain-Profil gesetzt
 9. mit `I` optional die globale PIN setzen, falls auch kritische Befehle erlaubt sein sollen
 10. mit `R` den Status abrufen
 11. sobald der Pocket Computer eine Statusantwort bekommt, ist die Verbindung aktiv
@@ -343,7 +415,7 @@ Pocket-Verbindung Schritt fuer Schritt:
 - Passwort des Crew-Kontos hinterlegen
 - globale PIN hinterlegen, falls du kritische Befehle senden willst
 - vereinfachte Hauptansicht mit letzten Funkprotokollen verfuegbar
-- Rolle wechseln mit `P`
+- Rolle wechseln mit `P` zwischen `Pilot`, `Ingenieur`, `Alarmzentrale`, `Co-Captain`, `Captain`
 - Captain-Profil umschalten mit `C`
 - Benutzer setzen mit `U`
 - Passwort setzen mit `W`
