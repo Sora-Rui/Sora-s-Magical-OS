@@ -1,13 +1,6 @@
 local theme = require("app.theme")
+local runtime = require("app.runtime")
 local screens = require("app.screens")
-
-local screenOrder = {
-    "home",
-    "helm",
-    "factory",
-    "alarms",
-    "settings",
-}
 
 local hotkeys = {
     h = "helm",
@@ -16,23 +9,14 @@ local hotkeys = {
     s = "settings",
 }
 
-local function screenIndex(name)
-    for index, value in ipairs(screenOrder) do
-        if value == name then
-            return index
-        end
-    end
-
-    return 1
-end
-
-local function render(activeScreen)
-    if activeScreen == "home" then
-        screens.home(1)
+local function render(state)
+    local screenName = state.activeScreen
+    if screenName == "home" then
+        screens.home(state)
         return
     end
 
-    screens[activeScreen]()
+    screens[screenName](state)
 end
 
 local function shutdown()
@@ -44,24 +28,41 @@ local function shutdown()
 end
 
 local function main()
-    local activeScreen = "home"
+    local state = runtime.newState(theme)
+    local tickTimer = os.startTimer(1)
 
     while true do
-        render(activeScreen)
-        local _, key = os.pullEvent("char")
-        if key == "q" then
-            shutdown()
-            return
-        end
+        render(state)
+        local event, key = os.pullEvent()
 
-        if key == "b" then
-            activeScreen = "home"
-        elseif hotkeys[key] then
-            activeScreen = hotkeys[key]
-        elseif activeScreen == "home" and tonumber(key) then
-            local nextScreen = screenOrder[tonumber(key) + 1]
-            if nextScreen then
-                activeScreen = nextScreen
+        if event == "timer" and key == tickTimer then
+            runtime.tick(state)
+            tickTimer = os.startTimer(1)
+        elseif event == "char" then
+            if key == "q" then
+                shutdown()
+                return
+            end
+
+            if key == "b" then
+                runtime.setScreen(state, "home")
+            elseif key == "m" then
+                runtime.toggleManualAlarm(state)
+            elseif hotkeys[key] then
+                runtime.setScreen(state, hotkeys[key])
+            elseif state.activeScreen == "home" and tonumber(key) then
+                local nextScreen = state.screenOrder[tonumber(key) + 1]
+                if nextScreen then
+                    runtime.setScreen(state, nextScreen)
+                end
+            end
+        elseif event == "key" then
+            if key == keys.left then
+                runtime.previousScreen(state)
+            elseif key == keys.right then
+                runtime.nextScreen(state)
+            elseif key == keys.space then
+                runtime.toggleManualAlarm(state)
             end
         end
     end
