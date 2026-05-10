@@ -3,6 +3,10 @@ local runtime = require("app.runtime")
 
 local ui = {}
 
+local function clamp(value, minimum, maximum)
+    return math.max(minimum, math.min(maximum, value))
+end
+
 local function centerX(text)
     local width = term.getSize()
     return math.max(1, math.floor((width - #text) / 2) + 1)
@@ -20,10 +24,26 @@ function ui.clear(backgroundColor)
 end
 
 function ui.writeAt(x, y, text, textColor, backgroundColor)
-    term.setCursorPos(x, y)
+    local width, height = term.getSize()
+    if y < 1 or y > height then
+        return
+    end
+
+    local safeX = clamp(x, 1, width)
+    local maxLength = width - safeX + 1
+    if maxLength <= 0 then
+        return
+    end
+
+    local renderedText = text
+    if #renderedText > maxLength then
+        renderedText = renderedText:sub(1, maxLength)
+    end
+
+    term.setCursorPos(safeX, y)
     term.setTextColor(textColor or theme.text)
     term.setBackgroundColor(backgroundColor or theme.accent)
-    term.write(text)
+    term.write(renderedText)
 end
 
 function ui.center(y, text, textColor, backgroundColor)
@@ -55,6 +75,10 @@ function ui.frame(title, footer)
 end
 
 function ui.panel(x, y, width, height, title)
+    if width < 4 or height < 2 then
+        return
+    end
+
     for row = 0, height - 1 do
         ui.writeAt(x, y + row, string.rep(" ", width), theme.text, theme.panel)
     end
@@ -64,19 +88,58 @@ function ui.panel(x, y, width, height, title)
     end
 end
 
+function ui.button(state, x, y, width, label, action, active)
+    local backgroundColor = active and theme.accentLight or theme.panelDark
+    local textColor = active and theme.shadow or theme.text
+    local rendered = " " .. label .. " "
+    local padding = math.max(0, width - #rendered)
+    rendered = rendered .. string.rep(" ", padding)
+    ui.writeAt(x, y, rendered, textColor, backgroundColor)
+    if state then
+        runtime.registerTouchTarget(state, {
+            x = x,
+            y = y,
+            width = math.max(width, #rendered),
+            height = 1,
+            action = action,
+        })
+    end
+end
+
 function ui.skull(x, y)
     local art = {
-        "    .-^^-.",
-        "  .'/ .-. \\",
-        " / /  o o  \\",
-        " | |   ^   | |",
-        " | |  ---  | |",
-        " \\ \\_____// /",
-        "  '._____.'",
+        "   .-^^-.",
+        " .' x  x '.",
+        "/    --    \\",
+        "|  .____.  |",
+        "|  |____|  |",
+        " \\  __  //",
+        "  '.__.'",
     }
 
     for index, line in ipairs(art) do
         ui.writeAt(x, y + index - 1, line, theme.accentLight, theme.accent)
+    end
+end
+
+function ui.warningOverlay(title, lines, blinkOn)
+    local width, height = term.getSize()
+    if not blinkOn then
+        return
+    end
+
+    local overlayWidth = math.max(20, math.min(width - 6, 30))
+    local overlayHeight = math.max(6, math.min(height - 6, 9))
+    local originX = math.floor((width - overlayWidth) / 2) + 1
+    local originY = math.floor((height - overlayHeight) / 2) + 1
+
+    for row = 0, overlayHeight - 1 do
+        ui.writeAt(originX, originY + row, string.rep(" ", overlayWidth), theme.text, theme.warning)
+    end
+
+    ui.center(originY + 1, "/!\\  " .. title .. "  /!\\", theme.text, theme.warning)
+    for index, line in ipairs(lines) do
+        ui.center(originY + 2 + index, line, theme.shadow, theme.warning)
     end
 end
 
@@ -99,10 +162,19 @@ function ui.statusBar(state)
     local speakerText, speakerColor = runtime.speakerStatus(state)
     local signalText, signalColor = runtime.signalStatus(state)
 
-    ui.panel(4, 3, 46, 3, " Statusleiste ")
-    ui.kv(6, 4, "Signal", signalText, signalColor)
-    ui.kv(20, 4, "Alarm", alarmText, alarmColor)
-    ui.kv(34, 4, "Speaker", speakerText, speakerColor)
+    local width = term.getSize()
+    local panelX = 2
+    local panelWidth = math.max(18, width - 2)
+    ui.panel(panelX, 3, panelWidth, 3, " Status ")
+
+    if width >= 48 then
+        ui.kv(4, 4, "Signal", signalText, signalColor)
+        ui.kv(18, 4, "Alarm", alarmText, alarmColor)
+        ui.kv(32, 4, "Speaker", speakerText, speakerColor)
+    else
+        ui.kv(4, 4, "Alarm", alarmText, alarmColor)
+        ui.kv(20, 4, "Speaker", speakerText, speakerColor)
+    end
 end
 
 function ui.statusRow(y, label, value, valueColor)

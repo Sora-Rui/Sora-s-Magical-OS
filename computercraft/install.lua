@@ -3,6 +3,7 @@ local args = { ... }
 local filesToInstall = {
     { source = "startup.lua", target = "startup.lua" },
     { source = "smos/boot.lua", target = "smos/boot.lua" },
+    { source = "smos/app/runtime.lua", target = "smos/app/runtime.lua" },
     { source = "smos/app/theme.lua", target = "smos/app/theme.lua" },
     { source = "smos/app/ui.lua", target = "smos/app/ui.lua" },
     { source = "smos/app/screens.lua", target = "smos/app/screens.lua" },
