@@ -1,4 +1,4 @@
-local theme = require("smos.app.theme")
+local theme = require("app.theme")
 
 local ui = {}
 

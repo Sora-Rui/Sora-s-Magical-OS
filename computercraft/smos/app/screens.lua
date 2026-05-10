@@ -1,5 +1,5 @@
-local theme = require("smos.app.theme")
-local ui = require("smos.app.ui")
+local theme = require("app.theme")
+local ui = require("app.ui")
 
 local screens = {}
 

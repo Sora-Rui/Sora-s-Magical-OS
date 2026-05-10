@@ -12,6 +12,19 @@ local function trimTrailingSlash(value)
     return (value:gsub("/+$", ""))
 end
 
+local function normalizeBaseUrl(value)
+    local normalized = trimTrailingSlash(value or "")
+
+    normalized = normalized:gsub("/install%.lua$", "")
+    normalized = normalized:gsub("/startup%.lua$", "")
+
+    if not normalized:match("^https?://") then
+        error("Base URL must start with http:// or https://")
+    end
+
+    return normalized
+end
+
 local function prompt(label, defaultValue)
     write(label)
     if defaultValue and defaultValue ~= "" then
@@ -94,7 +107,7 @@ local function main()
         targetRoot = prompt("Install to", "/")
     end
 
-    baseUrl = trimTrailingSlash(baseUrl)
+    baseUrl = normalizeBaseUrl(baseUrl)
     targetRoot = trimTrailingSlash(targetRoot)
     if targetRoot == "" then
         targetRoot = "/"

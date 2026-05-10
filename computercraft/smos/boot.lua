@@ -1,5 +1,5 @@
-local theme = require("smos.app.theme")
-local screens = require("smos.app.screens")
+local theme = require("app.theme")
+local screens = require("app.screens")
 
 local screenOrder = {
     "home",
