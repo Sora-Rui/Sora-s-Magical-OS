@@ -12,7 +12,7 @@ Der Prototyp deckt jetzt alle geplanten Kernpunkte ab:
 - Schadens- und Alarmmatrix
 - Crew-Konten mit Benutzername/Passwort und Rollen fuer Pilot, Ingenieur, Alarmzentrale, Co-Captain und Captain
 - Lokales Logbuch
-- PIN und physischer Schluesselschalter fuer kritische Funktionen
+- Rollen-Login als einzige Freigabeebene fuer Schiffsfunktionen
 - Funk- und Nachrichtenseite per Modem
 - Tablet-/Pocket-Computer-Client per `tablet.lua`
 
@@ -20,8 +20,8 @@ Der Prototyp deckt jetzt alle geplanten Kernpunkte ab:
 
 Empfohlene Wege:
 
-- Dev-Weg: Den Inhalt von `computercraft/` direkt auf einen Computer oder eine Disk kopieren.
-- `wget run https://raw.githubusercontent.com/Sora-Rui/Sora-s-Magical-OS/main/computercraft/install.lua https://raw.githubusercontent.com/Sora-Rui/Sora-s-Magical-OS/main/computercraft /`
+- Dev-Weg: Den Inhalt von `prototype/computercraft/` direkt auf einen Computer oder eine Disk kopieren.
+- Veroeffentlichter GitHub-Raw-Pfad: `wget run https://raw.githubusercontent.com/Sora-Rui/Sora-s-Magical-OS/main/computercraft/install.lua https://raw.githubusercontent.com/Sora-Rui/Sora-s-Magical-OS/main/computercraft /`
 - reboot
 - (Falls bereits installiert:
 delete startup.lua
@@ -40,7 +40,9 @@ delete smos)
 ### Wenn du noch die alte Version siehst
 
 - Dann ist fast immer noch ein alter lokaler Stand auf Bridge oder Tablet vorhanden, nicht die GitHub-Raw-Datei.
-- Ich habe den aktuellen Raw-Pfad geprueft: `main/computercraft/tablet.lua` enthaelt bereits die neue Version mit `protocolLog`, Benutzername/Passwort und der neuen Tablet-UI.
+- Der aktuell veroeffentlichte Raw-Pfad fuer GitHub ist `main/computercraft/...`.
+- Der lokale Quellordner im Repo bleibt trotzdem `prototype/computercraft/`.
+- Wenn im Debug noch `Security: Nur kritisch` steht, laeuft weiterhin ein alter Bridge-Stand.
 - Bridge zwangsweise neu aufsetzen:
 - `delete startup.lua`
 - `delete smos`
@@ -54,6 +56,7 @@ delete smos)
 - Woran du die neue Version sofort erkennst:
 - auf dem Tablet steht `Funkprotokoll`
 - auf dem Tablet steht `Auth: U User W Pw`
+- auf dem Tablet steht `Sys : S Schiff R`
 - im Bridge-Funkbereich tauchen `T` und `BC` im Protokoll auf
 - auf der Crew-Seite gibt es `User+`, `User-`, `Rolle+`, `Rolle-` und eine klickbare Crew-Auswahl
 
@@ -66,19 +69,19 @@ Wichtig:
 
 ### Wget-Installation
 
-- Basis-URL auf den Ordner `soras-magical-os/prototype/computercraft` zeigen lassen.
+- Basis-URL auf den veroeffentlichten Ordner `computercraft` zeigen lassen.
 - Beispiel:
-- `https://raw.githubusercontent.com/USER/REPO/BRANCH/soras-magical-os/prototype/computercraft`
+- `https://raw.githubusercontent.com/USER/REPO/BRANCH/computercraft`
 - Installer laden:
-- `wget run https://raw.githubusercontent.com/USER/REPO/BRANCH/soras-magical-os/prototype/computercraft/install.lua`
+- `wget run https://raw.githubusercontent.com/USER/REPO/BRANCH/computercraft/install.lua`
 - Direkt mit Argumenten:
-- `wget run https://raw.githubusercontent.com/USER/REPO/BRANCH/soras-magical-os/prototype/computercraft/install.lua https://raw.githubusercontent.com/USER/REPO/BRANCH/soras-magical-os/prototype/computercraft /`
+- `wget run https://raw.githubusercontent.com/USER/REPO/BRANCH/computercraft/install.lua https://raw.githubusercontent.com/USER/REPO/BRANCH/computercraft /`
 - Bridge-Profil explizit:
-- `wget run https://raw.githubusercontent.com/USER/REPO/BRANCH/soras-magical-os/prototype/computercraft/install.lua https://raw.githubusercontent.com/USER/REPO/BRANCH/soras-magical-os/prototype/computercraft / bridge`
+- `wget run https://raw.githubusercontent.com/USER/REPO/BRANCH/computercraft/install.lua https://raw.githubusercontent.com/USER/REPO/BRANCH/computercraft / bridge`
 - Tablet-Profil explizit:
-- `wget run https://raw.githubusercontent.com/USER/REPO/BRANCH/soras-magical-os/prototype/computercraft/install.lua https://raw.githubusercontent.com/USER/REPO/BRANCH/soras-magical-os/prototype/computercraft / tablet`
+- `wget run https://raw.githubusercontent.com/USER/REPO/BRANCH/computercraft/install.lua https://raw.githubusercontent.com/USER/REPO/BRANCH/computercraft / tablet`
 - Auf Disk installieren:
-- `wget run https://raw.githubusercontent.com/USER/REPO/BRANCH/soras-magical-os/prototype/computercraft/install.lua https://raw.githubusercontent.com/USER/REPO/BRANCH/soras-magical-os/prototype/computercraft disk`
+- `wget run https://raw.githubusercontent.com/USER/REPO/BRANCH/computercraft/install.lua https://raw.githubusercontent.com/USER/REPO/BRANCH/computercraft disk`
 
 Installierte Hauptdateien:
 
@@ -97,6 +100,7 @@ Installierte Hauptdateien:
 - Fuer einen Pocket Computer braucht die Bruecke mindestens ein Wireless Modem; Wired allein reicht nicht.
 - Das Funkprotokoll zeigt jetzt eingehende und ausgehende Eintraege mit Autor, PC-ID und Geraetetyp `T` oder `BC`.
 - Das Tablet fuehrt ein eigenes kompaktes Funkprotokoll fuer Syncs, Nachrichten und Remote-Aktionen.
+- fuer eigene Speaker-Audios erwartet das OS `.dfpwm` Dateien in `/smos/audio`; der Ordner wird bei Bedarf automatisch angelegt
 
 ## Ingame-Aufbau
 
@@ -143,6 +147,7 @@ Typische Ausfuehrungskomponenten:
 - aktueller Wegpunkt
 - `mom. pos.` ueber `gps.locate()` falls ein GPS-Netz erreichbar ist
 - Flugmodus-Schalter
+- im Brueckenkopf nahe der Uhrzeit steht zusaetzlich eine kompakte Positionsanzeige
 
 ### Helm
 
@@ -179,6 +184,9 @@ Wichtig fuer den manuellen Alarm:
 
 - er setzt den `Alarm I/O` jetzt dauerhaft auf aktiv, damit angeschlossene Sirenen und Lampen eindeutig einschalten
 - ohne zugeordneten `Alarm I/O` und ohne Speaker bleibt nur die Anzeige auf dem OS sichtbar
+- die Alarmseite hat jetzt einen `Speaker-Test`, um direkt zu pruefen, ob der CC-Speaker selbst hoerbar ist
+- der `Speaker-Test` spielt jetzt eine kurze mehrtoenige Folge statt nur eines einzelnen Signals
+- das Feld `Speaker` zeigt den Speaker-Status; `Alarm I/O` wird separat darunter angezeigt und ist nicht die Speaker-Seite
 
 ### Crew
 
@@ -187,8 +195,7 @@ Wichtig fuer den manuellen Alarm:
 - klickbare Crew-Verwaltungsliste auf dem Monitor
 - Rollenentzug und Benutzerloeschung arbeiten mit der aktuell ausgewaehlten Crew-Person statt mit getipptem Benutzernamen
 - `User+` verwendet die aktuelle Auswahl als Standard, kann aber auch neue Konten anlegen
-- PIN-Freigabe
-- Schluesselschalter-Zuordnung
+- Rollen-Login steuert alle Bereiche direkt ohne zweite Freigabestufe
 - gekoppeltes Tablet anzeigen
 
 ## Defaults
@@ -206,13 +213,15 @@ Wichtig fuer den manuellen Alarm:
 
 ### Logbuch
 
-- lokale Historie fuer Moduswechsel, Alarme, PIN-Freigaben, Funk und Steuerbefehle
+- lokale Historie fuer Moduswechsel, Alarme, Funk und Steuerbefehle
 
 ### System
 
 - Schiffsname
 - Palette und Symbol
 - Monitor-, Speaker- und Funkstatus
+- Audio-Cue-Auswahl fuer eingebaute Sounds und eigene `.dfpwm` Dateien
+- Debug-Zusammenfassung auf dem Monitor und Live-Debug auf dem Computer-Terminal, solange die Systemseite offen ist
 - Kern-I/O fuer Alarm, Helm und Ruder
 
 ## Verdrahtung
@@ -241,7 +250,6 @@ Die Seitenzuordnung erfolgt immer ueber die normalen ComputerCraft-Seiten:
 - `Not-Aus`: physischer Not-Aus-Eingang
 - `Feind I/O`: Feindkontakt-Sensor
 - `Last I/O`: Ueberlast- oder Werkstattsensor
-- `Schalter I/O`: physischer Schluesselschalter fuer kritische Funktionen
 
 ### Beispielbelegung
 
@@ -294,33 +302,48 @@ Er ist kein echter Physik- oder GPS-Autopilot.
 
 ## Sicherheit
 
-Kritische Funktionen brauchen eine Freigabe:
+Es gibt jetzt nur noch eine Sicherheitsstufe:
 
-- `Schub`
-- Ruderausgaenge
-- `Fabrik an/aus`
-- `Reserve`
-- `Gefahr` / `Notfall`
-- `Autopilot Start`
-- `PIN aendern`
-
-Freigabewege:
-
-- `U` oder Button fuer PIN-Eingabe
-- physischer Schluesselschalter ueber `Schalter I/O`
-
-Anzeigehinweis:
-
-- die Monitor-Anzeige `Freigabe` meint nur diese zweite Ebene fuer kritische Funktionen
-- sie sperrt Captain oder Co-Captain nicht aus ihrem normalen Rollenbereich aus
+- Crew-Konto mit Benutzername und Passwort
+- die zugewiesene Rolle entscheidet direkt, welche Aktionen erlaubt sind
+- es gibt keine zusaetzliche PIN- oder Schluesselschalter-Freigabe mehr
+- sobald eine Rolle die Aktion darf, ist sie sofort verfuegbar
 - waehrend Texteingaben zeigt der Monitor `Bitte Eingabe im Computer ausfuehren`; Abbruch geht ueber den Monitor-Button oder `Esc` am Computer
+
+## Eigene Audios
+
+Eigene Audioausgabe ueber den CC-Speaker ist jetzt vorbereitet.
+
+- lege eigene `.dfpwm` Dateien in `/smos/audio`
+- oeffne `System`
+- waehle mit `Cue <` und `Cue >` die gewuenschte Audio-Cue
+- `Play Cue` spielt die aktuelle Auswahl ab
+- eingebaute Cues und eigene DFPWM-Dateien erscheinen gemeinsam in der Auswahl
+
+Hinweis:
+
+- fuer eigene Dateien wird das CC:Tweaked-Format `DFPWM` verwendet, nicht `.ogg`
+- `Speaker-Test` prueft weiterhin nur den allgemeinen Speaker, unabhaengig von der gewaehlten Cue
+
+## Debug
+
+Wenn `System` auf dem Monitor geoeffnet ist, spiegelt Sora's Magical OS erweiterte Debugdaten parallel auf das native Computer-Terminal.
+
+Dort siehst du unter anderem:
+
+- aktive Seite, Tick, Modus und Crew-Kontext
+- Monitor- und Speaker-Erkennung
+- Alarmstatus und Ausgangszustaende
+- GPS-, Funk- und Sicherheitsstatus
+- aktuelle Audio-Cue und letztes Audio-Ergebnis
+- letzten Logeintrag
 
 ## Rollen-Login und Bereiche
 
-Es gibt jetzt zwei getrennte Sicherheitsstufen:
+Es gibt jetzt nur noch eine Sicherheitsstufe:
 
 - Crew-Konto mit Benutzername und Passwort
-- globale PIN fuer kritische Schiffsfunktionen
+- die zugewiesene Rolle entscheidet direkt ueber den Zugriff
 
 Rollenlogik:
 
@@ -360,7 +383,7 @@ Crew-Konten fuer andere Personen anlegen:
 Rollen oder Benutzer wieder entfernen:
 
 1. als Leitung auf `Crew` einloggen
-2. Benutzername des Zielkontos kennen
+2. Zielkonto in der klickbaren Crew-Liste auswaehlen
 3. gewuenschte Rolle oben auswaehlen
 4. `Rolle-` entzieht genau diese Rolle
 5. `User-` loescht das gesamte Crew-Konto
@@ -382,8 +405,8 @@ Login auf dem Hauptrechner:
 
 Der `Captain` hat Bereichszugriff auf das gesamte OS und kann alle Rollenaktionen ausfuehren.
 Der `Co-Captain` hat ebenfalls Vollzugriff auf den Schiffsbetrieb, bleibt aber unter dem Gruender-Captain.
-Fuer sensible Aktionen wie Schub, Reserve oder Autopilot reicht aber auch beim Captain das Crew-Login allein nicht.
-Dafuer braucht das System weiterhin die globale PIN oder den physischen Schluesselschalter.
+Es gibt keine zusaetzliche globale PIN mehr.
+Sobald die Rolle die Aktion darf, ist sie direkt verfuegbar.
 
 ## Funk und Tablet
 
@@ -403,9 +426,8 @@ Pocket-Verbindung Schritt fuer Schritt:
 6. der erste Setup-Dialog fragt nach Schiffsname und ob das Tablet als `Captain` verbinden soll
 7. Benutzername und Passwort eines vorhandenen Crew-Kontos eintragen
 8. mit `P` bei Bedarf die Rolle wechseln, dabei ist jetzt auch `Co-Captain` enthalten; mit `C` wird direkt das Captain-Profil gesetzt
-9. mit `I` optional die globale PIN setzen, falls auch kritische Befehle erlaubt sein sollen
-10. mit `R` den Status abrufen
-11. sobald der Pocket Computer eine Statusantwort bekommt, ist die Verbindung aktiv
+9. mit `R` den Status abrufen
+10. sobald der Pocket Computer eine Statusantwort bekommt, ist die Verbindung aktiv
 
 ### Pocket Computer
 
@@ -413,13 +435,11 @@ Pocket-Verbindung Schritt fuer Schritt:
 - Schiffsnamen eintragen
 - Benutzername des Crew-Kontos hinterlegen
 - Passwort des Crew-Kontos hinterlegen
-- globale PIN hinterlegen, falls du kritische Befehle senden willst
 - vereinfachte Hauptansicht mit letzten Funkprotokollen verfuegbar
 - Rolle wechseln mit `P` zwischen `Pilot`, `Ingenieur`, `Alarmzentrale`, `Co-Captain`, `Captain`
 - Captain-Profil umschalten mit `C`
 - Benutzer setzen mit `U`
 - Passwort setzen mit `W`
-- globale PIN setzen mit `I`
 - Status aktualisieren mit `R`
 
 Tablet-Befehle:
@@ -444,15 +464,13 @@ Wichtig:
 - Die Rolle muss dem Benutzer vorher vom Captain zugewiesen worden sein.
 - Im Funkprotokoll steht `T` fuer Tablet/Pocket Computer und `BC` fuer Brueckencomputer.
 - Eigene Nachrichten werden jetzt ebenfalls im Funkprotokoll angezeigt und nicht nur eingehende Nachrichten.
-- Die globale PIN ist nur fuer kritische Befehle zusaetzlich noetig.
+- Kritische Befehle folgen nur der Rolle des Crew-Kontos.
 
 ## Bedienung auf dem Hauptrechner
 
 - `Q` beendet das Programm
 - `M` schaltet den manuellen Alarm
 - `N` oeffnet Namenseingabe
-- `U` oeffnet PIN-Freigabe
-- `O` aendert die globale PIN
 - `H`, `F`, `G`, `A`, `C`, `K`, `L`, `S` springen zu Seiten
 - linke und rechte Pfeiltaste wechseln Seiten
 - Monitor-Touch und Mausklick funktionieren auf den registrierten Buttons
